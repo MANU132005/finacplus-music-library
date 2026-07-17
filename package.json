@@ -1,0 +1,20 @@
+{
+  "name": "finacplus-music-library-workspace",
+  "private": true,
+  "workspaces": [
+    "host",
+    "music-library"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "dev:host": "npm run dev --workspace=host",
+    "dev:music": "npm run dev --workspace=music-library",
+    "preview:music": "npm run preview --workspace=music-library",
+    "build:host": "npm run build --workspace=host",
+    "build:music": "npm run build --workspace=music-library",
+    "dev": "concurrently \"npm run dev:host\" \"npm run preview:music\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

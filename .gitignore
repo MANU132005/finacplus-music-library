@@ -1,0 +1,34 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build distributions
+dist/
+dist-ssr/
+*.local
+
+# Node binary downloads and temp files
+node-bin/
+node.zip
+
+# TS compiler cache files
+*.tsbuildinfo
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS temp files
+.DS_Store
+Thumbs.db
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
