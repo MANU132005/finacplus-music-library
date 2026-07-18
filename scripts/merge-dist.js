@@ -9,7 +9,7 @@ const rootDir = path.resolve(__dirname, '..');
 const musicDist = path.join(rootDir, 'music-library', 'dist');
 const hostDist = path.join(rootDir, 'host', 'dist');
 
-function copyDirSync(src, dest) {
+function copyDirSync(src, dest, isRoot = false) {
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest, { recursive: true });
   }
@@ -17,9 +17,15 @@ function copyDirSync(src, dest) {
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
+
     if (entry.isDirectory()) {
-      copyDirSync(srcPath, destPath);
+      copyDirSync(srcPath, destPath, false);
     } else {
+      // Prevent remote MFE's index.html from overwriting Host shell's index.html
+      if (isRoot && entry.name === 'index.html') {
+        console.log('Preserving host shell index.html (skipping remote index.html copy).');
+        continue;
+      }
       fs.copyFileSync(srcPath, destPath);
     }
   }
@@ -27,7 +33,7 @@ function copyDirSync(src, dest) {
 
 if (fs.existsSync(musicDist) && fs.existsSync(hostDist)) {
   console.log('Merging music-library/dist into host/dist...');
-  copyDirSync(musicDist, hostDist);
+  copyDirSync(musicDist, hostDist, true);
   console.log('Successfully merged MFE build artifacts into host/dist!');
 } else {
   console.error('Error: music-library/dist or host/dist missing before merge.');
