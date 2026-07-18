@@ -12,6 +12,7 @@
     "preview:music": "npm run preview --workspace=music-library",
     "build:host": "npm run build --workspace=host",
     "build:music": "npm run build --workspace=music-library",
+    "build": "npm run build:music && npm run build:host && node scripts/merge-dist.js",
     "dev": "concurrently \"npm run dev:host\" \"npm run preview:music\""
   },
   "devDependencies": {
