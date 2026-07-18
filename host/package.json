@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000 --strictPort",
-    "build": "tsc -b && vite build",
+    "build": "npm run build --prefix ../music-library && tsc -b && vite build && node ../scripts/merge-dist.js",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --port 3000"
   },
