@@ -1,184 +1,107 @@
 # FinacPlus Music Library Portal
 
-A music library application built with React, TypeScript, and Vite that demonstrates a Host–Remote Micro Frontend architecture using Module Federation.
-
-## Highlights
-- React 19 + TypeScript
-- Micro Frontend Architecture
-- Vite Module Federation
-- TanStack React Query
-- Mock Service Worker (MSW)
-- Role-Based Authentication
-- Optimistic Updates
-- Responsive Design
-- WCAG Accessibility
-- Vercel Deployment
+A production-ready Music Library application built with React 19, TypeScript, and Vite that demonstrates a Host–Remote Micro Frontend (MFE) architecture using Module Federation, TanStack React Query, Mock Service Worker (MSW), and Role-Based Access Control (RBAC).
 
 ---
 
-## Live Demo
-- **Host Application**: [https://host-eight-beta.vercel.app](https://host-eight-beta.vercel.app)
-- **Remote Micro Frontend**: [https://music-library-dun.vercel.app](https://music-library-dun.vercel.app)
+## Live Demo Links
+
+- **Main Application (Host Shell)**: [https://finacplus-music-library-host.vercel.app](https://finacplus-music-library-host.vercel.app)
+- **Micro Frontend (Remote Manifest)**: [https://finacplus-music-library-host.vercel.app/assets/remoteEntry.js](https://finacplus-music-library-host.vercel.app/assets/remoteEntry.js)
 
 ---
 
-## Project Preview
+## Demo Login Credentials
 
-*Note: Screenshots are not included in this repository. Placeholders indicate where assets should be placed:*
-
-- **Login View**: `docs/login.png`
-- **Dashboard View**: `docs/dashboard.png`
-- **Music Library View**: `docs/library.png`
-- **Add Song View**: `docs/add-song.png`
+| Role | Username | Password | Access & Permissions |
+|:---|:---|:---|:---|
+| **Administrator** | `admin` | `admin123` | Full access (View, Filter, Sort, Group, Add Songs, Delete Songs) |
+| **Viewer / User** | `user` | `user123` | Read-only access (View, Filter, Sort, Group — Add/Delete controls hidden) |
 
 ---
 
-## Tech Stack
+## Tech Stack & Architecture
 
-| Category | Technology |
+| Category | Technology / Library |
 |:---|:---|
-| **Frontend** | React 19 + TypeScript |
-| **Styling** | Tailwind CSS |
-| **Build Tool** | Vite |
-| **Micro Frontend** | Module Federation |
-| **Data Fetching** | TanStack React Query + Axios |
-| **Forms** | React Hook Form |
-| **Mock API** | MSW |
-| **Deployment** | Vercel |
-
----
-
-## Architecture
-
-This project splits a dashboard portal into two separately built apps that merge in the browser.
+| **Frontend Framework** | React 19 + TypeScript |
+| **Styling** | Tailwind CSS v3 |
+| **Build System** | Vite v5 |
+| **Micro Frontend** | `@originjs/vite-plugin-federation` (Module Federation) |
+| **Server State Management** | TanStack React Query v5 + Axios |
+| **Form Management** | React Hook Form (with numeric & range validation) |
+| **Network Mocking** | Mock Service Worker (MSW 2.0) |
+| **Cloud Deployment** | Vercel (Monorepo deployment) |
 
 ```mermaid
 graph TD
-  Host[Host Shell] -->|Imports at runtime| Remote[Remote Registry MFE]
-  Remote -->|Mutations / Queries| ReactQuery[React Query Cache]
-  ReactQuery -->|HTTP Request| MSW[Mock Service Worker]
-  MSW -->|Bypass / Fetch| iTunes[iTunes Search API]
-  MSW -->|Persists state| LocalStorage[(LocalStorage)]
+  Host[Host Shell Application] -->|Imports at runtime via Module Federation| Remote[Music Library Remote MFE]
+  Remote -->|Custom Hooks useSongsQuery| ReactQuery[TanStack React Query Cache]
+  ReactQuery -->|Axios HTTP GET/POST/DELETE| MSW[Mock Service Worker]
+  MSW -->|Intercepts GET| iTunes[iTunes Search API]
+  MSW -->|Persists POST / DELETE| LocalStorage[(Browser LocalStorage)]
 ```
 
-- **Host Shell**: Provides the wrapper layout, manages authentication, guards routes, and dynamically mounts the Remote MFE.
-- **Remote MFE**: Exposes the music registry component. It can be run and tested standalone on its own port.
-- **Mock Service Worker (MSW)**: Intercepts Axios requests at the browser network layer to make them look like real backend API calls, serving and mutating a local database cached in `localStorage`.
+- **Host Shell Application**: Manages layout navigation, in-memory JWT authentication (`AuthContext`), route protection, and dynamically mounts the Remote MFE component via `React.lazy()` and `<Suspense>`.
+- **Music Library Remote MFE**: Exposes `./MusicLibraryApp` containing the complete music registry view, filter bar, card grid, and song modal.
+- **Mock Service Worker (MSW)**: Intercepts `POST /songs` and `DELETE /songs/:id` HTTP requests in the browser, persisting added and deleted song records in `localStorage`.
 
 ---
 
-## Folder Structure
+## Features & Implementation Highlights
 
-```
-finacplus-music-library/
-├── host/                     # Host Shell Application (Port 3000)
-│   ├── src/
-│   │   ├── layouts/          # Layout wrappers and navigation side navs
-│   │   ├── pages/            # Dashboard page & MFE lazy-load mount container
-│   │   └── main.tsx          # Launches MSW and starts the Host
-│   └── vite.config.ts        # Module Federation imports setup
-│
-├── music-library/            # Remote Music Registry (Port 3001)
-│   ├── src/
-│   │   ├── features/music/   # Cards, FilterBar, AddSongModal views
-│   │   ├── hooks/            # React Query hooks for fetching and mutations
-│   │   └── services/         # Axios API connection layer
-│   └── vite.config.ts        # Exposes MusicLibraryApp component
-│
-├── package.json              # Monorepo workspaces config
-└── README.md
-```
+### 1. Music Library UI & Native Data Operations
+- **Live iTunes Integration**: Reads data from the live iTunes Search API (`https://itunes.apple.com/search?term=rock&entity=song`) and normalizes raw fields (`trackName`, `artistName`, `collectionName`, `releaseDate`) into clean domain interfaces.
+- **Client-Side Filter, Sort, Group**: Filter by Title/Artist/Album with a 300ms search input debounce; sort alphabetically or by release year; group by Artist or Album using native JavaScript `.filter()`, `.sort()`, and `.reduce()` operations wrapped in `useMemo`.
+- **Loading & Error UI**: Animated skeleton loader grid during data fetching; interactive error callout with a **"Retry Connection"** button on failure.
+
+### 2. Authentication & Role-Based Access Control (RBAC)
+- **In-Memory JWT Auth**: Generates synthetic JWT tokens on login (`mock-jwt-header.payload.signature`) and rehydrates sessions from `localStorage`.
+- **Role Permissions**: `admin` role grants full read/write access. `user` role locks the layout into read-only mode, hiding the **"+ Add Song Record"** button and card **Delete** buttons from the DOM.
+
+### 3. Add & Delete Song Operations (Admin Only)
+- **`react-hook-form` Validation**: Uncontrolled input form validating required fields, `valueAsNumber` conversion, and release year constraints (1800–2100). Includes focus trapping and `Escape` key accessibility.
+- **Optimistic UI Mutations**: Deletions immediately remove the target card from the React Query cache using `onMutate`. If the request fails, `onError` restores the snapshotted cache instantly.
 
 ---
 
-## Features
+## How to Run Locally
 
-### Authentication
-- **Mock Session Token**: Form submissions generate a base64-encoded mock session token, securing subsequent routes.
-- **Role-Based Access Control**: Login determines view permissions. Administrators (`admin`) receive full write access, while Viewers (`user`) are locked into a read-only layout where modification elements are removed from the DOM.
-- **Protected Routing**: Navigation guards intercept unauthenticated address requests, redirecting them to the login layout.
-
-### Dashboard
-- **Time-Based Greeting**: Banner displays warnings and greetings based on system clock hours ("Good Morning", "Good Afternoon", "Good Evening").
-- **Dynamic Stats**: Calculates total songs, unique artists, and unique albums from the active list.
-- **Activity Timeline**: Reads recent user actions (logins, additions, deletions) persisted locally.
-
-### Music Library
-- **Registry Controls**: Search, sort, and group controls.
-- **Registry Grouping & Sorting**: Alphabetical sorting, newest/oldest filters, and groupings by Album or Artist.
-
-### Performance
-- **Search Debounce**: A 300ms input timeout delay optimizes CPU cycles during filtering.
-- **Optimistic State Deletions**: Instantly hides deleted song cards. If the API fails, the hook automatically restores the previous state from cache.
-
-### Accessibility
-- **Focus Trapping**: Keyboard Tab navigation wraps securely inside open dialogs.
-- **Keyboard Triggers**: `Escape` keypresses close active modals immediately.
-- **Screen Reader Hooks**: Every form input utilizes corresponding `<label>` selectors, and elements are labeled with strict ARIA tags (`role="dialog"`, `aria-required`, `aria-invalid`).
-
----
-
-## Technical Decisions
-
-### Bypassing MFE Context Isolation
-* **Challenge**: Importing context files (like our Toast Notifications) in separately built remote MFE packages compiles them into two distinct JS context references. The remote MFE won't find the Host's mounted provider in its render tree.
-* **Approach**: Passed Host context operations (like the Toast message trigger) down as React props directly to the Remote MFE container. The Remote falls back to its local context only when running standalone.
-
-### Mock Database Persistence
-* **Challenge**: Standard MSW in-memory variables wipe out whenever the browser refreshes.
-* **Approach**: We read and write changes (custom added/deleted songs) directly to `localStorage` inside the MSW mock handlers. This ensures mock updates persist across tab refreshes.
-
-### Client-Side State Mutations
-* **Challenge**: Deleting a song needs to update the UI instantly without waiting for network confirmations.
-* **Approach**: Implemented optimistic updates in React Query. Deletions modify the UI immediately. If the API fails, the mutation's context snapshot rolls back the UI.
-
----
-
-## Getting Started
-
-### 1. Install Packages
-*(Uses legacy peer resolution to bypass React 19 package warnings)*
+### 1. Install Dependencies
 ```bash
-npm install --legacy-peer-deps
+npm install
 ```
 
-### 2. Start Dev Servers
+### 2. Run Development Servers
 ```bash
 npm run dev
 ```
-* Host Portal: [http://localhost:3000]
-* Remote Sandbox: [http://localhost:3001]
+- **Host Application**: `http://localhost:3000`
+- **Remote Music Library MFE**: `http://localhost:3001`
 
-### 3. Check and Build
+### 3. Build & Preview
 ```bash
-# Lint checks
-npm run lint --workspace=host
-npm run lint --workspace=music-library
-
-# Build
 npm run build
 ```
+*(Executes monorepo build for both projects and merges distribution outputs into `host/dist`)*.
 
 ---
 
-## Deployment
+## Deployment Strategy
 
-1. **Deploy Remote MFE**: Upload the `music-library` directory to Vercel. Dynamic assets are served directly from the remote domain.
-2. **Configure Environment Variable**: Set the `VITE_REMOTE_URL` environment variable in the Host's Vercel settings pointing to the deployed Remote URL.
-3. **Deploy Host**: Upload the `host` directory to Vercel. 
-4. **Validation**: Open Chrome DevTools Network Tab and verify `remoteEntry.js` loads successfully with HTTP 200 and no CORS warnings.
+The project is deployed on **Vercel static hosting**. 
+During the automated build pipeline (`npm run build`), `music-library` compiles first, exposing `./MusicLibraryApp` and generating `remoteEntry.js`. `host` compiles second, and `scripts/merge-dist.js` copies `music-library/dist` assets into `host/dist/assets/`, preserving `host/dist/index.html` as the primary SPA entry point.
 
 ---
 
-## Test Accounts
+## Tradeoffs & Future Improvements
 
-| Role | Username | Password | Access Level |
-|:---|:---|:---|:---|
-| **Administrator** | `admin` | `admin123` | Full access (Write + Read) |
-| **Viewer** | `user` | `user123` | Read-only access |
+**Architectural Tradeoffs**: To deliver a production-ready, zero-overhead assignment without requiring a dedicated hosted Node/Express backend server on Render or Railway, we chose to run **Mock Service Worker (MSW 2.0)** directly inside the browser, persisting custom song mutations in `localStorage`. While this provides an authentic network layer with real React Query caching lifecycle states (`useQuery`, `useMutation`, loading, error), it limits data persistence to the individual user's browser session rather than a shared cloud database. Additionally, to avoid context provider duplication across Module Federation build outputs, we passed Host context utilities (such as Toast notification handlers and active user role) as explicit React props across the federation boundary—trading implicit Context reliance for explicit component boundaries.
+
+**Future Improvements with More Time**: If granted additional time, we would implement a real PostgreSQL database with a Prisma ORM REST API backend, replace synthetic JWTs with OAuth2 / Auth0 authentication, implement End-to-End automated testing using Playwright/Cypress, and add WebSocket support for real-time collaborative music library updates across multiple connected browser clients.
 
 ---
 
 ## Author
 
-Built as part of the FinacPlus Frontend Internship assignment.
+Built for the **FinacPlus Frontend Internship Assignment** (Toorak Capital Partners project team).
