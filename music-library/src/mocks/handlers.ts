@@ -32,21 +32,14 @@ export const handlers = [
       }
       const data = await realResponse.json();
 
-      // Map iTunes response keys to our clean Song interface
-      const itunesSongs: Song[] = (data.results || []).map((item: {
-        trackId: number;
-        trackName?: string;
-        artistName?: string;
-        collectionName?: string;
-        releaseDate?: string;
-        artworkUrl100?: string;
-      }) => ({
-        id: String(item.trackId),
-        title: item.trackName || 'Unknown Title',
-        artist: item.artistName || 'Unknown Artist',
-        album: item.collectionName || 'Unknown Album',
-        year: item.releaseDate ? new Date(item.releaseDate).getFullYear() : 2000,
-        coverUrl: item.artworkUrl100 || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop&q=80',
+      // Map iTunes response keys to our clean Song interface, supporting both raw and pre-mapped properties
+      const itunesSongs: Song[] = (data.results || []).map((item: any) => ({
+        id: String(item.id || item.trackId || Math.random()),
+        title: item.title || item.trackName || 'Unknown Title',
+        artist: item.artist || item.artistName || 'Unknown Artist',
+        album: item.album || item.collectionName || 'Unknown Album',
+        year: item.year || (item.releaseDate ? new Date(item.releaseDate).getFullYear() : 2000),
+        coverUrl: item.coverUrl || item.artworkUrl100 || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop&q=80',
       }));
 
       const added = getAddedSongs();
