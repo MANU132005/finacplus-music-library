@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
 import './index.css';
 
 async function enableMocking() {
@@ -12,9 +11,15 @@ async function enableMocking() {
 }
 
 enableMocking().then(() => {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-  );
+  // Dynamically import App to ensure Module Federation shared scope is bootstrapped before App renders
+  import('./App').then(({ default: App }) => {
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+      ReactDOM.createRoot(rootElement).render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>,
+      );
+    }
+  });
 });
