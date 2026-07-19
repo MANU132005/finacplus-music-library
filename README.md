@@ -7,7 +7,7 @@ A production-ready Music Library application built with React 19, TypeScript, an
 ## Live Demo Links
 
 - **Main Application (Host Shell)**: [https://finacplus-music-library-host.vercel.app](https://finacplus-music-library-host.vercel.app)
-- **Micro Frontend (Remote Manifest)**: [https://finacplus-music-library-host.vercel.app/assets/remoteEntry.js](https://finacplus-music-library-host.vercel.app/assets/remoteEntry.js)
+- **Micro Frontend (Remote Manifest)**: [https://music-library-dun.vercel.app/assets/remoteEntry.js](https://music-library-dun.vercel.app/assets/remoteEntry.js)
 
 ---
 
