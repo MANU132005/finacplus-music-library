@@ -99,7 +99,14 @@ export const MusicLibrary: React.FC<MusicLibraryProps> = ({ userRole = 'user', t
   const { toast: localToast } = useToast();
   const toast = toastProp || localToast;
 
-  const location = useLocation();
+  // Safely attempt useLocation read without throwing if unrouted
+  let openAddModalInitial = false;
+  try {
+    const location = useLocation();
+    openAddModalInitial = !!(location?.state as { openAddModal?: boolean })?.openAddModal;
+  } catch {
+    openAddModalInitial = false;
+  }
 
   // Instant local state for the search input
   const [searchInputValue, setSearchInputValue] = useState('');
@@ -108,9 +115,7 @@ export const MusicLibrary: React.FC<MusicLibraryProps> = ({ userRole = 'user', t
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('title-asc');
   const [groupBy, setGroupBy] = useState<'none' | 'artist' | 'album'>('none');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(() => {
-    return !!(location.state as { openAddModal?: boolean })?.openAddModal;
-  });
+  const [isAddModalOpen, setIsAddModalOpen] = useState(openAddModalInitial);
 
   // Debounce effect: Wait 300ms after user stops typing before updating filter term
   useEffect(() => {
